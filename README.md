@@ -4,9 +4,10 @@
 * Low gas fee burnt on revert
 * Add new DEXs and Flash loan lenders easily
 
-It consists of primitive contracts and pipeline contracts.
+It consists of primitive contracts and pipeline contracts. An example arbitrage contract that uses Aave flashloan lending contract and UniswapV2, Curve-fi dexes is shown below. 
 
 ![Overview of Arth](docs/chain-contract.drawio.svg)
+
 
 ## Primitive Contracts
 ### ArthCurveSwap
