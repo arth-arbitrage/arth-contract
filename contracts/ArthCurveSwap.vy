@@ -9,7 +9,7 @@ interface AddressProvider:
 interface CurvePool:
     def exchange_underlying(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256: payable
 
-interface Registry:
+interface CurveRegistry:
     def get_coin_indices(_pool: address, _from: address, _to: address) -> (int128, int128, bool): view
 
 admin: public(address)
@@ -32,7 +32,7 @@ def exchange(
     _intoken: int128 = 0
     _outtoken: int128 = 0
     res: bool = False
-    _intoken, _outtoken, res = Registry(self.address_provider).get_coin_indices(_pool, _intoken_addr, _outtoken_addr)
+    _intoken, _outtoken, res = CurveRegistry(self.address_provider).get_coin_indices(_pool, _intoken_addr, _outtoken_addr)
 
     outtoken_amount: uint256 = CurvePool(_pool).exchange_underlying(_outtoken, _intoken, _amount, _expected)
     return outtoken_amount
