@@ -68,22 +68,25 @@ def get_outputs_for_input(from_token, amount):
         (pool_addr,rate) = swaps.get_best_rate(_from, _to, amount)
         if pool_addr == ZERO_ADDRESS:
             continue
+        reserve_from = None
+        reserve_to = None          
         try:
             balances = registry.get_underlying_balances(pool_addr)
+            print(f"balances: {balances}")
+
+            coins = registry.get_underlying_coins(pool_addr)
+            print(f"coins: {coins}")
+            i = 0
+            reserve_from  = 0
+            reserve_to = 0
+            for i, coin in enumerate(coins, start=0):
+                if coin == _from:
+                    reserve_from = balances[i]
+                if coin == _to:
+                    reserve_to = balances[i]
+
         except Exception as e:
             print('Failed to upload to ftp: '+ str(e))
-        print(f"balances: {balances}")
-
-        coins = registry.get_underlying_coins(pool_addr)
-        print(f"coins: {coins}")
-        i = 0
-        reserve_from  = 0
-        reserve_to = 0
-        for i, coin in enumerate(coins, start=0):
-            if coin == _from:
-                reserve_from = balances[i]
-            if coin == _to:
-                reserve_to = balances[i]
 
         #print(f"rate {from_token}:{_from}, {to_token}:{_to}, pool_addr:{pool_addr} rate:{rate}")
         out_amounts.append({"pool":pool_addr, "swap0-1": rate, "token0": from_token, "token1": to_token, "reserve0": reserve_from, "reserve1": reserve_to})
