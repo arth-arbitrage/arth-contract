@@ -13,4 +13,4 @@ else:
 
 def main():
     accounts.load("account1")    
-    rthUniswapv2Swap.deploy({'from':accounts[0]})
+    ArthUniswapv2Swap.deploy({'from':accounts[0]})

@@ -12,6 +12,7 @@ token_list = {
     "BUSD": {"address":"0x4fabb145d64652a948d72533023f6e7a623c7c53", "decimals":18},
     "TUSD": {"address":"0x0000000000085d4780b73119b644ae5ecd22b376", "decimals":18},
     "EURS": {"address":"0xdB25f211AB05b1c97D595516F45794528a807ad8", "decimals":2},
+    "VID": {"address": "0x2c9023bbc572ff8dc1228c7858a280046ea8c9e5", "decimals":2},
 }
 """
 {
