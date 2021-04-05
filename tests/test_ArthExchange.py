@@ -21,9 +21,7 @@ def lender1(accounts):
 def borrower1(accounts):
     yield accounts[2]
 
-@pytest.fixture
-def arthLending(lender1):
-    return lender1.deploy(ArthLending)
+
 
 @pytest.fixture
 def numPairsAndAssets(lender1):
@@ -35,17 +33,10 @@ def ArthMultiSwapV1Inst(borrower1, lender1):
     return borrower1.deploy(ArthArbV1MultiSwap, curve_addressprovider)
 
 @pytest.fixture
-def ArthLendingInst(lender1):
-    arthLending = lender1.deploy(ArthLending)
-    arthLending.initialize(lender1, 0)
-    return arthLending
-
-
-@pytest.fixture
 def Erc20Assets(admin, lender1, numPairsAndAssets):
     assets = [admin.deploy(ERC20Mock, "token"+str(i), "MOCK"+str(i), lender1, Wei("1000000 ether")) for i in range(0, numPairsAndAssets)]     
     return assets
-
+    
 @pytest.fixture
 def SwapPairs(Erc20Assets, admin, lender1, numPairsAndAssets):
     swapPairs = [admin.deploy(ArthDexV1Pair) for i in range(0,numPairsAndAssets)]     
@@ -89,15 +80,29 @@ class StateMachine:
     def invariant(self):
         pass
 
-def test_exchange(accounts, admin, lender1, borrower1, ArthMultiSwapV1Inst, SwapWrappperArth, SwapPairs, Erc20Assets):
-    value = Wei("2 ether")
+def test_exchange_nofee(accounts, admin, lender1, borrower1, ArthMultiSwapV1Inst, SwapWrappperArth, SwapPairs, Erc20Assets):
+    startBalance =  Wei("10 ether")
+    valueIn = Wei("2 ether")
     reserve = Wei("100 ether")
-    
+    SwapPairs[0].setFee(0, {"from":admin})
     #loan cusion. remove
     Erc20Assets[0].transfer(ArthMultiSwapV1Inst.address, Wei("10 ether"), {"from":lender1})
+    valueOut = SwapPairs[0].getAmountOut(valueIn, Erc20Assets[0].address, Erc20Assets[1].address)
 
-    ArthMultiSwapV1Inst.exchange(SwapWrappperArth.address, SwapPairs[0].address, Erc20Assets[0].address, Erc20Assets[1].address, value, value )
-    assert(Erc20Assets[0].balanceOf(ArthMultiSwapV1Inst.address) ==   Wei("8 ether")) 
-    assert(Erc20Assets[1].balanceOf(ArthMultiSwapV1Inst.address) ==   Wei("2 ether")) 
+    ArthMultiSwapV1Inst.exchange(SwapWrappperArth.address, SwapPairs[0].address, Erc20Assets[0].address, Erc20Assets[1].address, valueIn, valueOut )
+    assert(Erc20Assets[0].balanceOf(ArthMultiSwapV1Inst.address) ==  startBalance - valueIn )
+    assert(Erc20Assets[1].balanceOf(ArthMultiSwapV1Inst.address) == valueOut )
 
-    ArthMultiSwapV1Inst.exchange(SwapWrappperArth.address, SwapPairs[0].address, Erc20Assets[1].address, Erc20Assets[0].address, value, value ) 
+
+def test_exchange_fee(accounts, admin, lender1, borrower1, ArthMultiSwapV1Inst, SwapWrappperArth, SwapPairs, Erc20Assets):
+    startBalance =  Wei("10 ether")
+    valueIn = Wei("2 ether")
+    reserve = Wei("100 ether")
+    SwapPairs[0].setFee(3, {"from":admin})
+    #loan cusion. remove
+    Erc20Assets[0].transfer(ArthMultiSwapV1Inst.address, Wei("10 ether"), {"from":lender1})
+    valueOut = SwapPairs[0].getAmountOut(valueIn, Erc20Assets[0].address, Erc20Assets[1].address)
+
+    ArthMultiSwapV1Inst.exchange(SwapWrappperArth.address, SwapPairs[0].address, Erc20Assets[0].address, Erc20Assets[1].address, valueIn, valueOut )
+    assert(Erc20Assets[0].balanceOf(ArthMultiSwapV1Inst.address) ==  startBalance - valueIn )
+    assert(Erc20Assets[1].balanceOf(ArthMultiSwapV1Inst.address) == valueOut )

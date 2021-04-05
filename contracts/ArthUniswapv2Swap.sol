@@ -9,7 +9,6 @@ contract ArthUniswapv2Swap {
     constructor() public {
     }
     
-
     function exchange(address pair, uint256 swapAmount, uint256 expectedOut) external returns (uint256) {
         bytes memory data = "";
         address token0 = IUniswapV2Pair(pair).token0();

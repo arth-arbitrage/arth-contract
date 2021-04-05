@@ -1,5 +1,7 @@
 pragma solidity 0.6.6;
 
+// SPDX-License-Identifier: MIT
+
 import './IArthDexV1Pair.sol';
 import "OpenZeppelin/openzeppelin-contracts@3.0.0/contracts/math/SafeMath.sol";
 import "OpenZeppelin/openzeppelin-contracts@3.0.0/contracts/token/ERC20/IERC20.sol";
@@ -63,7 +65,7 @@ contract ArthDexV1Pair is IArthDexV1Pair {
     }
 
     // called once by the factory at time of deployment
-    function setFee(uint256 _fee) external {
+    function setFee(uint256 _fee) external override {
         require(msg.sender == owner, 'ArthDexV1: FORBIDDEN'); // sufficient check
         fee = _fee;
     }
@@ -78,6 +80,24 @@ contract ArthDexV1Pair is IArthDexV1Pair {
         reserve1 = uint112(balance1);
         blockTimestampLast = blockTimestamp;
         emit Sync(reserve0, reserve1);
+    }
+
+    // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
+    function getAmountOut(uint amountIn, address _token0, address _token1) external view override returns (uint amountOut) {
+        uint reserveIn;
+        uint reserveOut;
+        if(_token0 == token0 && _token1 == token1) {
+            (reserveIn, reserveOut) = (reserve0, reserve1);
+        } else if(_token0 == token1 && _token1 == token0) {
+            (reserveIn, reserveOut) = (reserve1, reserve0);
+        }
+        require(amountIn > 0, 'ArthDexV1: INSUFFICIENT_INPUT_AMOUNT');
+        require(reserveIn > 0 && reserveOut > 0, 'ArthDexV1: INSUFFICIENT_LIQUIDITY');
+
+        uint amountInWithFee = amountIn.mul(1000 - fee);
+        uint numerator = amountInWithFee.mul(reserveOut);
+        uint denominator = reserveIn.mul(1000).add(amountInWithFee);
+        amountOut = numerator / denominator;
     }
 
     function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external override lock {
@@ -108,7 +128,7 @@ contract ArthDexV1Pair is IArthDexV1Pair {
         { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
             uint balance0Adjusted = balance0.mul(1000).sub(amount0In.mul(fee));
             uint balance1Adjusted = balance1.mul(1000).sub(amount1In.mul(fee));
-            //require(balance0Adjusted.mul(balance1Adjusted) >= uint(_reserve0).mul(_reserve1).mul(1000**2), 'ArthDexV1: K');
+            require(balance0Adjusted.mul(balance1Adjusted) >= uint(_reserve0).mul(_reserve1).mul(1000**2), 'ArthDexV1: K');
         }
 
         _update(balance0, balance1, _reserve0, _reserve1);
@@ -117,6 +137,7 @@ contract ArthDexV1Pair is IArthDexV1Pair {
 
     // force balances to match reserves
     function skim(address to) external override lock {
+        require(msg.sender == owner, 'ArthDexV1: FORBIDDEN'); // sufficient check
         address _token0 = token0; // gas savings
         address _token1 = token1; // gas savings
         _safeTransfer(_token0, to, IERC20(_token0).balanceOf(address(this)).sub(reserve0));
